@@ -15,6 +15,13 @@ app.use(bodyParser.json());
 
 var port = process.env.PORT || 9999;        // set our port
 
+var Reminder = require('./models/reminder');
+
+var mongoose = require('mongoose');
+var url = 'mongodb://localhost:27017/reminder-api';
+mongoose.connect(url); // connect to our database
+
+
 // ROUTES FOR OUR API
 // =============================================================================
 var router = express.Router();              // get an instance of the express Router
