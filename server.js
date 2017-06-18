@@ -37,7 +37,7 @@ router.get('/', function(req, res) {
     res.json({ message: 'hooray! welcome to our api!' });   
 });
 
-// on routes that end in /bears
+// on routes that end in /reminders
 // ----------------------------------------------------
 router.route('/reminders')
 
@@ -65,8 +65,52 @@ router.route('/reminders')
         });
     });
 
+// on routes that end in /reminders/:reminder_id
+// ----------------------------------------------------
+router.route('/reminders/:reminder_id')
 
-// more routes for our API will happen here
+    // get the reminder with that id (accessed at GET http://localhost:8080/api/reminders/:reminder_id)
+    .get(function(req, res) {
+        Reminder.findById(req.params.reminder_id, function(err, reminder) {
+            if (err)
+                res.send(err);
+            res.json(reminder);
+        });
+    })
+
+    // update the reminder with this id (accessed at PUT http://localhost:8080/api/reminders/:reminder_id)
+    .put(function(req, res) {
+
+        // use our reminder model to find the reminder we want
+        Reminder.findById(req.params.reminder_id, function(err, reminder) {
+
+            if (err)
+                res.send(err);
+
+            reminder.name = req.body.name;  // update the reminder's info
+
+            // save the reminder
+            reminder.save(function(err) {
+                if (err)
+                    res.send(err);
+
+                res.json({ message: 'Reminder updated!' });
+            });
+
+        });
+    })
+
+    // delete the reminder with this id (accessed at DELETE http://localhost:8080/api/reminders/:reminder_id)
+    .delete(function(req, res) {
+        Reminder.remove({
+            _id: req.params.reminder_id
+        }, function(err, reminder) {
+            if (err)
+                res.send(err);
+
+            res.json({ message: 'Successfully deleted' });
+        });
+    });
 
 // REGISTER OUR ROUTES -------------------------------
 // all of our routes will be prefixed with /api
