@@ -16,7 +16,10 @@ app.use(bodyParser.json());
 var port = process.env.PORT || 8080;        // set our port
 
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/reminder-api'); // connect to our database
+var url = process.env.NODE_ENV === 'production' ? 
+    'mongodb://reminderbot:ybhzZifp5MIeWhfPM3sSRt3bx8AdRqBcJsxWhzJOj3sBFxmzZ3hwrp7F6ZYyi5WcEboi40el1zZUiixt6AHBIg==@reminderbot.documents.azure.com:10255/?ssl=true&sslverifycertificate=false'
+    : 'mongodb://localhost/reminder-api';
+mongoose.connect(url); // connect to our database
 
 var Reminder = require('./models/reminder');
 
