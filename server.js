@@ -18,33 +18,56 @@ var port = process.env.PORT || 8080;        // set our port
 var mongoose = require('mongoose');
 var url = process.env.NODE_ENV === 'production' ? 
     'mongodb://reminderbot:ybhzZifp5MIeWhfPM3sSRt3bx8AdRqBcJsxWhzJOj3sBFxmzZ3hwrp7F6ZYyi5WcEboi40el1zZUiixt6AHBIg==@reminderbot.documents.azure.com:10255/?ssl=true&sslverifycertificate=false'
-    : 'mongodb://localhost/reminder-api';
+    : 'mongodb://127.0.0.1/reminder-api';
 mongoose.connect(url); // connect to our database
 
 var Reminder = require('./models/reminder');
 
 var axios = require('axios');
-function sendMessage(user_id, message) {
-    return axios({
-        method: 'post',
-        url: 'https://self-reminder.herokuapp.com/listener',
-        data: {
-            user_id: user_id,
-            message: message
+function sendMessage(reminder, cb) {
+    axios.post('https://self-reminder.herokuapp.com/listener', {
+        user_id: reminder.user_id,
+        message: reminder.message
+    })
+    .then(function (response) {
+        cb(reminder);
+    })
+    .catch(function (err) {
+        console.log(err)
+    });
+}
+
+function updateReminder(reminder) {
+    now = new Date();
+    new_reminder = new Date(now.getTime() + parseInt(reminder.frequency));
+
+    Reminder.findOneAndUpdate(
+    { _id: reminder._id }, 
+    { $set: { next_reminder: new_reminder }}, 
+    { new: true }, 
+    function(err, reminder) {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log("Updated reminder after sending: %s", reminder);
         }
     });
 }
 
-function processReminders() {
-    // TODO find reminders that need to be sent and send them
+function getRemindersToProcess() {
+    console.log("Starting to process reminders...");
+    var now = new Date();
+    Reminder.find({next_reminder: { $lt: now }}, function(err, reminders) {
+        if (err) {
+            console.log(err);
+            return;
+        }
 
-    sendMessage("Thomas", "message")
-    .then(function (response) {
-        // TODO update next reminder based on frequency
-    })
-    .catch(function (error) {
-        console.log(error);
-    })
+        for (var i = 0; i < reminders.length; i++) {
+            var reminder = reminders[i];
+            sendMessage(reminder, function(reminder) { updateReminder(reminder) });
+        }
+    });
 }   
 
 var cron = require('cron');
@@ -53,7 +76,7 @@ var job = new cron.CronJob('* * * * *', function() {
         return;
     }
 
-    processReminders()
+    getRemindersToProcess();
 }, null, true);
 
 // ROUTES FOR OUR API
@@ -62,8 +85,7 @@ var router = express.Router();              // get an instance of the express Ro
 
 // middleware to use for all requests
 router.use(function(req, res, next) {
-    // do logging
-    console.log('Something is happening.');
+    // TODO logging
     next(); // make sure we go to the next routes and don't stop here
 });
 
@@ -81,7 +103,9 @@ router.route('/reminders')
     .post(function(req, res) {
         var reminder = new Reminder();      // create a new instance of the Reminder model
         reminder.user_id = req.body.user_id; 
-        reminder.message = req.body.message; 
+        reminder.message = req.body.message;
+        reminder.next_reminder = req.body.next_reminder;
+        reminder.frequency = req.body.frequency;
 
         // save the reminder and check for errors
         reminder.save(function(err) {
@@ -126,6 +150,8 @@ router.route('/reminders/:reminder_id')
 
             reminder.user_id = req.body.user_id;
             reminder.message = req.body.message;
+            reminder.next_reminder = req.body.next_reminder;
+            reminder.frequency = req.body.frequency;
 
             // save the reminder
             reminder.save(function(err) {
