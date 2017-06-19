@@ -23,6 +23,34 @@ mongoose.connect(url); // connect to our database
 
 var Reminder = require('./models/reminder');
 
+var axios = require('axios');
+const APP_SECRET = (process.env.APP_SECRET) 
+function sendMessage(user_id, message) {
+    if (process.env.SEND_REMINDERS == '0') {
+        return;
+    }
+
+    axios({
+        method: 'post',
+        url: 'https://self-reminder.herokuapp.com/listener',
+        data: {
+            user_id: user_id,
+            message: message
+        }
+    })
+    .then(function (response) {
+        console.log(response);
+    })
+    .catch(function (error) {
+        console.log(error);
+    });
+}
+
+var cron = require('cron');
+var job = new cron.CronJob('* * * * *', function() { 
+    sendMessage("Thomas", "message")
+}, null, true);
+
 // ROUTES FOR OUR API
 // =============================================================================
 var router = express.Router();              // get an instance of the express Router
@@ -47,7 +75,8 @@ router.route('/reminders')
     // create a reminder (accessed at POST http://localhost:8080/api/reminders)
     .post(function(req, res) {
         var reminder = new Reminder();      // create a new instance of the Reminder model
-        reminder.name = req.body.name;  // set the reminder's name (comes from the request)
+        reminder.user_id = req.body.user_id; 
+        reminder.message = req.body.message; 
 
         // save the reminder and check for errors
         reminder.save(function(err) {
@@ -90,7 +119,8 @@ router.route('/reminders/:reminder_id')
             if (err)
                 res.send(err);
 
-            reminder.name = req.body.name;  // update the reminder's info
+            reminder.user_id = req.body.user_id;
+            reminder.message = req.body.message;
 
             // save the reminder
             reminder.save(function(err) {
