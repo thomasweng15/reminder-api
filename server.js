@@ -24,31 +24,36 @@ mongoose.connect(url); // connect to our database
 var Reminder = require('./models/reminder');
 
 var axios = require('axios');
-const APP_SECRET = (process.env.APP_SECRET) 
 function sendMessage(user_id, message) {
-    if (process.env.SEND_REMINDERS == '0') {
-        return;
-    }
-
-    axios({
+    return axios({
         method: 'post',
         url: 'https://self-reminder.herokuapp.com/listener',
         data: {
             user_id: user_id,
             message: message
         }
-    })
-    .then(function (response) {
-        console.log(response);
-    })
-    .catch(function (error) {
-        console.log(error);
     });
 }
 
+function processReminders() {
+    // TODO find reminders that need to be sent and send them
+
+    sendMessage("Thomas", "message")
+    .then(function (response) {
+        // TODO update next reminder based on frequency
+    })
+    .catch(function (error) {
+        console.log(error);
+    })
+}   
+
 var cron = require('cron');
 var job = new cron.CronJob('* * * * *', function() { 
-    sendMessage("Thomas", "message")
+    if (process.env.SEND_REMINDERS == '0') {
+        return;
+    }
+
+    processReminders()
 }, null, true);
 
 // ROUTES FOR OUR API
