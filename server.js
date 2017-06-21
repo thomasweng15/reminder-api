@@ -82,6 +82,13 @@ var job = new cron.CronJob('* * * * *', function() {
     getRemindersToProcess();
 }, null, true);
 
+var ping = new cron.CronJob('0,15,30,45 * * * *', function() { 
+    axios.get('https://self-reminder.herokuapp.com/listener')
+        .then(function (response) {
+            console.log('bot ping error?', response.error);
+        });
+}, null, true);
+
 // ROUTES FOR OUR API
 // =============================================================================
 var router = express.Router();              // get an instance of the express Router
