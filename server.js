@@ -7,6 +7,14 @@
 var express    = require('express');        // call express
 var app        = express();                 // define our app using express
 var bodyParser = require('body-parser');
+var cors = require('cors');
+
+var corsOptions = {
+  origin: 'https://self-reminder.herokuapp.com/',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204 
+}
+
+app.use(cors(corsOptions));
 
 // configure app to use bodyParser()
 // this will let us get the data from a POST
