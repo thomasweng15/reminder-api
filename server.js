@@ -83,6 +83,7 @@ var job = new cron.CronJob('* * * * *', function() {
 }, null, true);
 
 var ping = new cron.CronJob('0,15,30,45 * * * *', function() { 
+    console.log('pinging bot...');
     axios.get('https://self-reminder.herokuapp.com/listener')
         .then(function (response) {
             console.log('bot ping error?', response.error);
